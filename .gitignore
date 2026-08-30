@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+~$*
+
+# Cortex Code local config
+.cortex/
+
+# Non-Snowflake files (local utilities, presentations, notes)
+create_pptx.py
+create_regulatory_pdfs.py
+CreditGuardian_AI_Hackathon.pptx
+CreditGuardian_AI_Presentation.html
+Video prep.txt
+sv_proto.json
+regulatory_pdfs/
+
+# Root-level copies (moved to streamlit/ and agents/)
+/streamlit_app.py
+/creditguardian_agent.yaml
+/credit_risk_sv.yaml

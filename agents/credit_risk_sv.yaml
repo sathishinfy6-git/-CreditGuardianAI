@@ -1,0 +1,211 @@
+name: CREDIT_RISK_SEMANTIC_VIEW
+description: Credit Risk semantic model for CreditGuardian AI covering borrowers, risk scores, loans, and applications.
+tables:
+  - name: CUSTOMERS
+    base_table:
+      database: CREDITGUARDIAN_AI
+      schema: CORE
+      table: CUSTOMERS
+    description: Master table of borrower company information
+    unique_keys:
+      - name: customers_pk
+        columns:
+          - CUSTOMER_ID
+    dimensions:
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        description: Unique borrower identifier
+        data_type: TEXT
+      - name: COMPANY_NAME
+        expr: COMPANY_NAME
+        description: Borrower company name
+        data_type: TEXT
+      - name: SECTOR
+        expr: SECTOR
+        description: Industry sector
+        data_type: TEXT
+      - name: INDUSTRY
+        expr: INDUSTRY
+        description: Specific industry within sector
+        data_type: TEXT
+      - name: RISK_TIER
+        expr: RISK_TIER
+        description: Manual risk tier LOW MEDIUM HIGH
+        data_type: TEXT
+      - name: RELATIONSHIP_MANAGER
+        expr: RELATIONSHIP_MANAGER
+        description: Assigned relationship manager
+        data_type: TEXT
+    measures:
+      - name: TOTAL_BORROWERS
+        expr: COUNT(DISTINCT CUSTOMER_ID)
+        description: Total number of borrowers
+        data_type: NUMBER
+  - name: RISK_SCORES
+    base_table:
+      database: CREDITGUARDIAN_AI
+      schema: CORE
+      table: RISK_SCORES
+    description: Dynamic table with 7-component composite credit risk scores
+    dimensions:
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        description: Borrower identifier
+        data_type: TEXT
+      - name: RISK_GRADE
+        expr: RISK_GRADE
+        description: Risk grade A through E
+        data_type: TEXT
+      - name: KEY_RISK_DRIVERS
+        expr: KEY_RISK_DRIVERS
+        description: Key risk factors text
+        data_type: TEXT
+    measures:
+      - name: COMPOSITE_SCORE
+        expr: COMPOSITE_SCORE
+        description: Total composite risk score
+        data_type: NUMBER
+      - name: FINANCIAL_HEALTH_SCORE
+        expr: FINANCIAL_HEALTH_SCORE
+        description: Financial health component max 30
+        data_type: NUMBER
+      - name: REPAYMENT_SCORE
+        expr: REPAYMENT_SCORE
+        description: Repayment behavior score max 20
+        data_type: NUMBER
+      - name: CASHFLOW_BEHAVIOR_SCORE
+        expr: CASHFLOW_BEHAVIOR_SCORE
+        description: Cash flow behavior score max 10
+        data_type: NUMBER
+      - name: COLLATERAL_SCORE
+        expr: COLLATERAL_SCORE
+        description: Collateral coverage score max 13
+        data_type: NUMBER
+      - name: RATING_SCORE
+        expr: RATING_SCORE
+        description: Credit rating score max 13
+        data_type: NUMBER
+      - name: INDUSTRY_SCORE
+        expr: INDUSTRY_SCORE
+        description: Industry risk score max 10
+        data_type: NUMBER
+      - name: MACRO_ENVIRONMENT_SCORE
+        expr: MACRO_ENVIRONMENT_SCORE
+        description: Macro environment score max 12
+        data_type: NUMBER
+      - name: AVG_RISK_SCORE
+        expr: AVG(COMPOSITE_SCORE)
+        description: Average risk score across borrowers
+        data_type: NUMBER
+  - name: LOAN_APPLICATIONS
+    base_table:
+      database: CREDITGUARDIAN_AI
+      schema: CORE
+      table: LOAN_APPLICATIONS
+    description: Loan application pipeline with AI-assisted decisioning
+    dimensions:
+      - name: APPLICATION_ID
+        expr: APPLICATION_ID
+        description: Unique application identifier
+        data_type: TEXT
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        description: Borrower identifier
+        data_type: TEXT
+      - name: APPLICATION_STATUS
+        expr: APPLICATION_STATUS
+        description: Application status PENDING UNDER_REVIEW APPROVED REJECTED WITHDRAWN ESCALATED
+        data_type: TEXT
+      - name: AI_RECOMMENDATION
+        expr: AI_RECOMMENDATION
+        description: AI recommendation APPROVE REJECT CONDITIONAL_APPROVE ESCALATE
+        data_type: TEXT
+      - name: OFFICER_DECISION
+        expr: OFFICER_DECISION
+        description: Human officer final decision
+        data_type: TEXT
+      - name: LOAN_TYPE
+        expr: LOAN_TYPE
+        description: Type of loan requested
+        data_type: TEXT
+    time_dimensions:
+      - name: APPLICATION_DATE
+        expr: APPLICATION_DATE
+        description: Date application submitted
+        data_type: DATE
+    measures:
+      - name: TOTAL_APPLICATIONS
+        expr: COUNT(*)
+        description: Total loan applications
+        data_type: NUMBER
+      - name: TOTAL_REQUESTED_AMOUNT
+        expr: SUM(REQUESTED_AMOUNT)
+        description: Total amount requested across applications
+        data_type: NUMBER
+  - name: LOAN_HISTORY
+    base_table:
+      database: CREDITGUARDIAN_AI
+      schema: CORE
+      table: LOAN_HISTORY
+    description: Loan facilities - sanctions drawdowns collateral status
+    dimensions:
+      - name: CUSTOMER_ID
+        expr: CUSTOMER_ID
+        description: Borrower identifier
+        data_type: TEXT
+      - name: LOAN_TYPE
+        expr: LOAN_TYPE
+        description: Type of loan
+        data_type: TEXT
+      - name: LOAN_STATUS
+        expr: LOAN_STATUS
+        description: Loan status ACTIVE CLOSED DEFAULT
+        data_type: TEXT
+    measures:
+      - name: TOTAL_OUTSTANDING
+        expr: SUM(OUTSTANDING_BALANCE)
+        description: Total outstanding loan balance
+        data_type: NUMBER
+      - name: TOTAL_COLLATERAL
+        expr: SUM(COLLATERAL_VALUE)
+        description: Total collateral value
+        data_type: NUMBER
+      - name: ACTIVE_LOAN_COUNT
+        expr: COUNT(*)
+        description: Number of loan facilities
+        data_type: NUMBER
+relationships:
+  - name: risk_scores_to_customers
+    left_table: RISK_SCORES
+    right_table: CUSTOMERS
+    join_type: inner
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: CUSTOMER_ID
+        right_column: CUSTOMER_ID
+  - name: applications_to_customers
+    left_table: LOAN_APPLICATIONS
+    right_table: CUSTOMERS
+    join_type: inner
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: CUSTOMER_ID
+        right_column: CUSTOMER_ID
+  - name: loans_to_customers
+    left_table: LOAN_HISTORY
+    right_table: CUSTOMERS
+    join_type: inner
+    relationship_type: many_to_one
+    relationship_columns:
+      - left_column: CUSTOMER_ID
+        right_column: CUSTOMER_ID
+verified_queries:
+  - name: borrowers_by_risk_grade
+    question: How many borrowers are in each risk grade?
+    sql: SELECT rs.RISK_GRADE, COUNT(DISTINCT rs.CUSTOMER_ID) AS borrower_count, ROUND(AVG(rs.COMPOSITE_SCORE), 1) AS avg_score FROM CREDITGUARDIAN_AI.CORE.RISK_SCORES rs GROUP BY rs.RISK_GRADE ORDER BY rs.RISK_GRADE
+  - name: high_risk_borrowers
+    question: Which borrowers have the highest risk?
+    sql: SELECT rs.CUSTOMER_ID, rs.COMPANY_NAME, rs.COMPOSITE_SCORE, rs.RISK_GRADE, rs.KEY_RISK_DRIVERS FROM CREDITGUARDIAN_AI.CORE.RISK_SCORES rs WHERE rs.RISK_GRADE IN ('D', 'E') ORDER BY rs.COMPOSITE_SCORE ASC
+  - name: pending_applications
+    question: Show me all pending loan applications
+    sql: SELECT la.APPLICATION_ID, c.COMPANY_NAME, la.LOAN_TYPE, la.REQUESTED_AMOUNT, la.APPLICATION_STATUS, la.AI_RECOMMENDATION FROM CREDITGUARDIAN_AI.CORE.LOAN_APPLICATIONS la JOIN CREDITGUARDIAN_AI.CORE.CUSTOMERS c ON la.CUSTOMER_ID = c.CUSTOMER_ID WHERE la.APPLICATION_STATUS IN ('PENDING', 'UNDER_REVIEW', 'ESCALATED') ORDER BY la.APPLICATION_DATE
