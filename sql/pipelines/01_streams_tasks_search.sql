@@ -3,6 +3,22 @@
 -- Macro-economic data streaming + regulatory PDF ingestion
 -- ============================================================
 
+-- Stream: Load Macro feed to RAW tables
+create or replace task CREDITGUARDIAN_AI.CORE.LOAD_MACRO_FEED_STAGE_TASK
+	warehouse=COMPUTE_WH
+	schedule='USING CRON 30 5 * * * Asia/Kolkata'
+	COMMENT='Loads JSON files from MACRO_FEED_STAGE into MACRO_ECONOMIC_RAW. Runs daily at 5:30 AM IST, before PROCESS_MACRO_DATA_TASK (6 AM).'
+	as BEGIN
+    COPY INTO CREDITGUARDIAN_AI.CORE.MACRO_ECONOMIC_RAW (RAW_DATA, SOURCE_FILE)
+    FROM (
+        SELECT $1, METADATA$FILENAME
+        FROM @CREDITGUARDIAN_AI.CORE.MACRO_FEED_STAGE
+    )
+    FILE_FORMAT = (TYPE = JSON, STRIP_OUTER_ARRAY = TRUE)
+    ON_ERROR = 'CONTINUE'
+    PURGE = FALSE;
+END;
+
 -- Stream: CDC on raw macro data
 create or replace stream CREDITGUARDIAN_AI.CORE.MACRO_ECONOMIC_STREAM
     on table CREDITGUARDIAN_AI.CORE.MACRO_ECONOMIC_RAW
